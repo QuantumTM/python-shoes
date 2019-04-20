@@ -177,7 +177,7 @@ wheel
 
 # advanced
 logbook
-click>7.0
+click>=7.0
 
 # cutom requirements
 '
