@@ -56,18 +56,43 @@ LOCATION="$(dirname "$(readlink -f "$0")")"
 
 PYTHON_FILE='
 from common import logging
+import click
 
 logger = logging.get_logger("main")
 
-def run():
+@click.group(help="This is an app")
+def app():
 	logger.info("Bootstrap successfully!")
 
-def main():
-	run()
+@app.command(help="successive entries as a list")
+@click.argument("messages", nargs=-1)
+def print(messages):
+	logger.info(",".join(("{}",)*len(messages)), *messages)
+
+@app.command(help="first and last names")
+@click.option("--first", "-f", required=True)
+@click.option("--second", "-s", default="_blank_")
+@click.option("--caps", is_flag=True)
+def name(first, second, caps):
+	logger.info(
+		"{} {}",
+		first.capitalize() if caps else first,
+		second.capitalize() if caps else second
+	)
+
+@app.command(help="click context infomation")
+@click.pass_context
+def show_context(ctx):
+	logger.info(
+		"info_name: {}, params: {}, parent.info_name: {}",
+		ctx.info_name,
+		ctx.command.params,
+		ctx.parent.info_name,
+	)
 
 if __name__ == "__main__":
 	with logging.init("app").applicationbound():
-		main()
+		app()
 '
 
 LOGGINGPY='import sys
@@ -152,6 +177,7 @@ wheel
 
 # advanced
 logbook
+click>7.0
 
 # cutom requirements
 '
