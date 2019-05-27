@@ -3,20 +3,27 @@
 function make_folders() {
 	mkdir "bin"
 	mkdir "common"
+	mkdir "scripts"
+	mkdir "deploy"
 }
 
 function make_files() {
 	touch "bin/run_python.sh"
+	touch "bin/make_config.sh"
 	touch ".gitignore"
 	touch "run"
 	touch "requirements.txt"
 	touch "main.py"
 	touch "common/logging.py"
 	touch "config.py"
+	touch "scripts/make_config.py"
+	touch "deploy/config_enviroment.py"
 }
 
 function inject_files() {
 	echo "${PY_RUNNER}" > "bin/run_python.sh"
+	echo "${MAKE_CONFIG}" > "bin/make_config.sh"
+	echo "${ENV_CONFIG}" > "deploy/config_enviroment.py"
 	echo "${GITIGNORE}" > ".gitignore"
 	echo "${RUN_FILE}" > "run"
 	echo "${REQUIREMENTS}" > "requirements.txt"
@@ -54,8 +61,7 @@ function main() {
 
 LOCATION="$(dirname "$(readlink -f "$0")")"
 
-PYTHON_FILE='
-from common import logging
+PYTHON_FILE='from common import logging
 import click
 
 logger = logging.get_logger("main")
@@ -136,10 +142,54 @@ def create(config_dict):
 		cfg.write(configfile)
 '
 
+MAKE_CONFIG='import click
+import config
+from common import logging
+
+log = logging.get_logger("script")
+
+#@click.group(help="Setup application config")
+#def app():
+#	logger.info("Configuring Application Enviroment...")
+
+@click.command(help="Setup application config"
+def build_config(env):
+	pass
+
+if __name__ == "__main__":
+	with logging.init("script").applicationbound():
+		app()
+'
+
+ENV_CONFIG='CONFIG = {
+	"local": {
+		"app": [
+			("env", "local"),
+		],
+	},
+	"dev": {
+		"app": [
+			("env", "dev"),
+		],
+	}.
+	"prod": {
+		"app": [
+			("env", "prod"),
+		],
+	},
+}'
+
 PY_RUNNER='#!/usr/bin/env bash
 source "${PROJECT_ROOT}/venv/bin/activate"
 python "$@"
 deactivate
+'
+
+MAKE_CONFIG='#!/usr/bin/env bash
+# TODO: not sure this is the correct approach
+# resolve to dir above `bin`
+PROJECT_ROOT=$(readlink -f "$(dirname "$(readlink -f "$0")")/../")
+${PROJECT_ROOT}/run ${PROJECT_ROOT}/scripts/make_config.py "$@"
 '
 
 RUN_FILE='#!/usr/bin/env bash
@@ -158,6 +208,11 @@ venv/
 
 # IDE Settings
 .idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
 # Application Config
 app.conf
