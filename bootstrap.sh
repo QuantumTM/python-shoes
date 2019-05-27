@@ -151,7 +151,7 @@ from common import logging
 
 log = logging.get_logger("script")
 
-@click.command(help="Setup application config"
+@click.command(help="Setup application config")
 def build_config(env):
 	config.create(CONFIG["env"])
 
@@ -170,7 +170,7 @@ ENV_CONFIG='CONFIG = {
 		"app": [
 			("env", "dev"),
 		],
-	}.
+	},
 	"prod": {
 		"app": [
 			("env", "prod"),
@@ -183,7 +183,7 @@ CONFIG_NAME = "app.conf"
 
 PY_RUNNER='#!/usr/bin/env bash
 source "${PROJECT_ROOT}/venv/bin/activate"
-python "$@"
+PYTHONPATH="${PROJECT_ROOT}" python "$@"
 deactivate
 '
 
