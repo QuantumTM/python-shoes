@@ -27,9 +27,10 @@ function inject_files() {
 	echo "${GITIGNORE}" > ".gitignore"
 	echo "${RUN_FILE}" > "run"
 	echo "${REQUIREMENTS}" > "requirements.txt"
-	echo "${PYTHON_FILE}" > "main.py"
+	echo "${MAINPY}" > "main.py"
 	echo "${LOGGINGPY}" > "common/logging.py"
 	echo "${CONFIGPY}" > "config.py"
+	echo "${MAKE_CONFIGPY}" > "scripts/make_config.py"
 }
 
 function with_venv() {
@@ -45,7 +46,7 @@ function make_venv() {
 }
 
 function set_permissions() {
-	chmod 755 "bin/run_python.sh"
+	chmod 755 "bin/*"
 	chmod 755 "run"
 }
 
@@ -61,26 +62,26 @@ function main() {
 
 LOCATION="$(dirname "$(readlink -f "$0")")"
 
-PYTHON_FILE='from common import logging
-import click
+MAINPY='import click
+from common import logging
 
-logger = logging.get_logger("main")
+log = logging.get_logger("main")
 
 @click.group(help="This is an app")
 def app():
-	logger.info("Bootstrap successfully!")
+	log.info("Bootstrap successfully!")
 
 @app.command(help="successive entries as a list")
 @click.argument("messages", nargs=-1)
 def print(messages):
-	logger.info(",".join(("{}",)*len(messages)), *messages)
+	log.info(",".join(("{}",)*len(messages)), *messages)
 
 @app.command(help="first and last names")
 @click.option("--first", "-f", required=True)
 @click.option("--second", "-s", default="_blank_")
 @click.option("--caps", is_flag=True)
 def name(first, second, caps):
-	logger.info(
+	log.info(
 		"{} {}",
 		first.capitalize() if caps else first,
 		second.capitalize() if caps else second
@@ -89,7 +90,7 @@ def name(first, second, caps):
 @app.command(help="click context infomation")
 @click.pass_context
 def show_context(ctx):
-	logger.info(
+	log.info(
 		"info_name: {}, params: {}, parent.info_name: {}",
 		ctx.info_name,
 		ctx.command.params,
@@ -117,16 +118,7 @@ def get_logger(logger_name):
 CONFIGPY='import os
 from configparser import ConfigParser
 
-CONFIG_NAME = "app.conf"
-
-def load():
-	cfg = ConfigParser()
-	loc = os.path.join(os.path.dirname(os.path.abspath(__file__)), CONFIG_NAME)
-	with open(loc) as f:
-		cfg.read_file(f)
-	cfg.config_path = loc
-	print("Found config file {}".format(loc))
-	return cfg
+from deploy.config_enviroment import CONFIG_NAME
 
 def create(config_dict):
 	path = os.path.join(os.path.dirname(os.path.abspath(__file__)), CONFIG_NAME)
@@ -138,27 +130,34 @@ def create(config_dict):
 		for k, v in kv.items():
 			cfg[section][k] = v
 
-	with open(path, 'w') as configfile:
+	with open(path, "w") as configfile:
 		cfg.write(configfile)
+
+def load():
+	cfg = ConfigParser()
+	path = os.path.join(os.path.dirname(os.path.abspath(__file__)), CONFIG_NAME)
+	with open(path) as f:
+		cfg.read_file(f)
+	cfg.config_path = path
+	print("Found config file {}".format(path))
+	return cfg
 '
 
-MAKE_CONFIG='import click
+MAKE_CONFIGPY='import click
+
 import config
+from deploy.config_enviroment import CONFIG, CONFIG_NAME
 from common import logging
 
 log = logging.get_logger("script")
 
-#@click.group(help="Setup application config")
-#def app():
-#	logger.info("Configuring Application Enviroment...")
-
 @click.command(help="Setup application config"
 def build_config(env):
-	pass
+	config.create(CONFIG["env"])
 
 if __name__ == "__main__":
 	with logging.init("script").applicationbound():
-		app()
+		build_config()
 '
 
 ENV_CONFIG='CONFIG = {
@@ -177,7 +176,10 @@ ENV_CONFIG='CONFIG = {
 			("env", "prod"),
 		],
 	},
-}'
+}
+
+CONFIG_NAME = "app.conf"
+'
 
 PY_RUNNER='#!/usr/bin/env bash
 source "${PROJECT_ROOT}/venv/bin/activate"
