@@ -46,7 +46,7 @@ function make_venv() {
 }
 
 function set_permissions() {
-	chmod 755 "bin/*"
+	chmod 755 bin/*
 	chmod 755 "run"
 }
 
