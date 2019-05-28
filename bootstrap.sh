@@ -58,18 +58,26 @@ function main() {
 	set_permissions
 	echo 'Creating virtual enviroment...'
 	make_venv
+	./bin/make_config.sh local
 }
 
 LOCATION="$(dirname "$(readlink -f "$0")")"
 
 MAINPY='import click
+
+import config
 from common import logging
 
+cfg = config.load()
 log = logging.get_logger("main")
 
 @click.group(help="This is an app")
 def app():
 	log.info("Bootstrap successfully!")
+	log.info(
+		"Using configuration enviroment: {}",
+		{s:dict(cfg.items(s)) for s in cfg.sections()}
+	)
 
 @app.command(help="successive entries as a list")
 @click.argument("messages", nargs=-1)
@@ -152,8 +160,9 @@ from common import logging
 log = logging.get_logger("script")
 
 @click.command(help="Setup application config")
+@click.argument("env", required=True)
 def build_config(env):
-	config.create(CONFIG["env"])
+	config.create(CONFIG[env])
 
 if __name__ == "__main__":
 	with logging.init("script").applicationbound():
