@@ -73,11 +73,8 @@ log = logging.get_logger("main")
 
 @click.group(help="This is an app")
 def app():
+	log.info("Using enviroment: {}", cfg["app"]["env"])
 	log.info("Bootstrap successfully!")
-	log.info(
-		"Using configuration enviroment: {}",
-		{s:dict(cfg.items(s)) for s in cfg.sections()}
-	)
 
 @app.command(help="successive entries as a list")
 @click.argument("messages", nargs=-1)
@@ -171,19 +168,19 @@ if __name__ == "__main__":
 
 ENV_CONFIG='CONFIG = {
 	"local": {
-		"app": [
-			("env", "local"),
-		],
+		"app": {
+			"env": "local",
+		},
 	},
 	"dev": {
-		"app": [
-			("env", "dev"),
-		],
+		"app": {
+			"env": "dev",
+		},
 	},
 	"prod": {
-		"app": [
-			("env", "prod"),
-		],
+		"app": {
+			"env": "prod",
+		},
 	},
 }
 
